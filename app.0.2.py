@@ -28,12 +28,12 @@ class RcloneGUI(Gtk.Application):
         stack.add_named(download_page, "downloads")
 
         # TODO: need to create page
-        # lst_remote_folders_page = Gtk.Label(label="Remote folders 'lsd' management will go here...")
         lst_remote_folders_page = self.create_remote_lsd_page()
         stack.add_named(lst_remote_folders_page, "remote_folders")
 
         # TODO: need to create page
-        remotes_page = Gtk.Label(label="Available remotes and add new remotes will go here...")
+        # remotes_page = Gtk.Label(label="Available remotes and add new remotes will go here...")
+        remotes_page = self.create_remotes_page()
         stack.add_named(remotes_page, "remotes")
 
         # TODO: need to create page
@@ -265,7 +265,7 @@ class RcloneGUI(Gtk.Application):
         remotes = self.get_rclone_remotes()
         for remote in remotes :
             remote_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-            remote_box.append(Gtk.Label(label=remote + "lsd should appear here"))
+            remote_box.append(Gtk.Label(label=remote + " lsd should appear here"))
             stack.add_titled(remote_box, remote, remote.capitalize())
 
         # Navigation
@@ -276,6 +276,37 @@ class RcloneGUI(Gtk.Application):
         box.append(stack)
     
         return box
+    
+    ###### Add Remotes page ######
+    def create_remotes_page(self):
+        box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            spacing=10,
+            margin_top=10,
+            margin_start=10,
+            margin_end=10,
+            margin_bottom=10,
+        )
+        box.set_size_request(750,600)
+
+        remotes = self.get_rclone_remotes()
+        output_view = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        output_scroll = Gtk.ScrolledWindow()
+        output_scroll.set_child(output_view)
+        output_scroll.set_vexpand(True)
+        for remote in remotes:
+            self.append_output(output_view, remote + "\t\t")
+        add_btn = Gtk.Button(label="Add Remote")
+        add_btn.connect(
+            "clicked",
+            lambda btn: self.start_rclone_download(),
+        )
+
+        box.append(add_btn)
+        box.append(output_scroll)
+
+        return box
+
 
 app = RcloneGUI()
 app.run()
