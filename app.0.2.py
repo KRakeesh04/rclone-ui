@@ -156,12 +156,13 @@ class RcloneGUI(Gtk.Application):
 
         return row_box, remote_combo, path_entry
 
-    def get_active_text(combo):
+    def get_active_text(self, combo):
         idx = combo.get_active()
         if idx == -1:
             return None
         model = combo.get_model()
-        return model.get_string(idx)
+        tree_iter = model.get_iter(Gtk.TreePath.new_from_indices([idx]))
+        return model.get_value(tree_iter, 0)
 
 
 
