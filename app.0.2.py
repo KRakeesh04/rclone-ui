@@ -28,7 +28,8 @@ class RcloneGUI(Gtk.Application):
         stack.add_named(download_page, "downloads")
 
         # TODO: need to create page
-        lst_remote_folders_page = Gtk.Label(label="Remote folders 'lsd' management will go here...")
+        # lst_remote_folders_page = Gtk.Label(label="Remote folders 'lsd' management will go here...")
+        lst_remote_folders_page = self.create_remote_lsd_page()
         stack.add_named(lst_remote_folders_page, "remote_folders")
 
         # TODO: need to create page
@@ -74,6 +75,7 @@ class RcloneGUI(Gtk.Application):
         win.set_child(main_box)
         win.present()
 
+    ###### download page ######
     def create_download_page(self):
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
