@@ -14,6 +14,7 @@ class RcloneGUI(Gtk.Application):
     def __init__(self):
         super().__init__(application_id="com.example.RcloneGUI")
 
+    ################################# Main Page #################################
     def do_activate(self, *args):
         win = Gtk.ApplicationWindow(application=self)
         win.set_title("Rclone Desktop App")
@@ -28,15 +29,16 @@ class RcloneGUI(Gtk.Application):
         stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         stack.set_transition_duration(300)
 
+        # Page - 01
         download_page = self.create_download_page()
         stack.add_named(download_page, "downloads")
 
-        # TODO: need to create page
+        # Page -02
         lst_remote_folders_page = self.create_remote_lsd_page()
         stack.add_named(lst_remote_folders_page, "remote_folders")
 
         # TODO: need to create page
-        # remotes_page = Gtk.Label(label="Available remotes and add new remotes will go here...")
+        remotes_page = Gtk.Label(label="Available remotes and add new remotes will go here...")
         remotes_page = self.create_remotes_page()
         stack.add_named(remotes_page, "remotes")
 
@@ -78,8 +80,8 @@ class RcloneGUI(Gtk.Application):
 
         win.set_child(main_box)
         win.present()
-
-    ###### download page ######
+    ##############################################################################
+    ############################## download page #################################
     def create_download_page(self):
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -128,7 +130,6 @@ class RcloneGUI(Gtk.Application):
         box.append(output_scroll)
 
         return box
-
 
     def set_path_components(self, value : str):
         # --- Remote selector + Path input + File chooser ---
@@ -183,8 +184,6 @@ class RcloneGUI(Gtk.Application):
         tree_iter = model.get_iter(Gtk.TreePath.new_from_indices([idx]))
         return model.get_value(tree_iter, 0)
 
-
-
     def get_rclone_remotes(self):
         try:
             output = subprocess.check_output(["rclone", "listremotes"], text=True).splitlines()
@@ -216,7 +215,6 @@ class RcloneGUI(Gtk.Application):
 
         dialog.connect("response", on_response)
         dialog.show()
-
 
     def start_rclone_download(self, src_remote_combo, src_path_entry, dest_remote_combo, dest_path_entry, output_view, btn, progress_bar):
         src_selected_remote = self.get_active_text(src_remote_combo)
@@ -277,14 +275,13 @@ class RcloneGUI(Gtk.Application):
             GLib.idle_add(lambda: btn.set_sensitive(True))
 
         threading.Thread(target=worker, daemon=True).start()
-
-
+    ##############################################################################
 
     def append_output(self, output_view, text):
         buf = output_view.get_buffer()
         buf.insert(buf.get_end_iter(), text)
 
-    ###### remote lsd page ######
+    ############################## Remote lsd page ##############################
     def create_remote_lsd_page(self):
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -377,10 +374,10 @@ class RcloneGUI(Gtk.Application):
                 self.append_output(output_view, " "*level*5 + "├── " + i + " /\n")
                 # print(" "*level*4 + "├── " + i + " /")
             self.display_lsd(lsd[i], level+1, output_view)
+    ##############################################################################
 
 
-
-    ###### Add Remotes page ######
+    ############################## Add Remotes page ##############################
     def create_remotes_page(self):
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
@@ -409,6 +406,7 @@ class RcloneGUI(Gtk.Application):
         box.append(output_scroll)
 
         return box
+    ##############################################################################
 
 
 app = RcloneGUI()
