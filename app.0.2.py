@@ -1,10 +1,14 @@
 import gi
 import subprocess
 import threading
-import os
+import re
+import subprocess
+from collections import defaultdict
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib
+
+
 
 class RcloneGUI(Gtk.Application):
     def __init__(self):
@@ -90,26 +94,41 @@ class RcloneGUI(Gtk.Application):
         src_row_box, src_remote_combo, src_path_entry = self.set_path_components("source")
         dest_row_box, dest_remote_combo, dest_path_entry = self.set_path_components("destination")
 
-        # --- Download output area ---
+        # Progress bar
+        progress_bar = Gtk.ProgressBar()
+        progress_bar.set_show_text(True)
+        progress_bar.set_text("Progress")
+
+        # Output view (optional debug)
         output_view = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.WORD_CHAR)
         output_scroll = Gtk.ScrolledWindow()
         output_scroll.set_child(output_view)
         output_scroll.set_vexpand(True)
 
-        # --- Start download button ---
+        # Start button
         start_btn = Gtk.Button(label="Start Download")
         start_btn.connect(
             "clicked",
-            lambda btn: self.start_rclone_download(src_remote_combo, src_path_entry, dest_remote_combo, dest_path_entry, output_view, start_btn),
+            lambda btn: self.start_rclone_download(
+                src_remote_combo,
+                src_path_entry,
+                dest_remote_combo,
+                dest_path_entry,
+                output_view,
+                start_btn,
+                progress_bar
+            ),
         )
 
-        # Add to page
+        # Build layout
         box.append(src_row_box)
         box.append(dest_row_box)
         box.append(start_btn)
+        box.append(progress_bar)
         box.append(output_scroll)
 
         return box
+
 
     def set_path_components(self, value : str):
         # --- Remote selector + Path input + File chooser ---
@@ -198,14 +217,14 @@ class RcloneGUI(Gtk.Application):
         dialog.connect("response", on_response)
         dialog.show()
 
-    def start_rclone_download(self, src_remote_combo, src_path_entry, dest_remote_combo, dest_path_entry, output_view, btn):
+
+    def start_rclone_download(self, src_remote_combo, src_path_entry, dest_remote_combo, dest_path_entry, output_view, btn, progress_bar):
         src_selected_remote = self.get_active_text(src_remote_combo)
         src_path = src_path_entry.get_text().strip()
-
         dest_selected_remote = self.get_active_text(dest_remote_combo)
         dest_path = dest_path_entry.get_text().strip()
 
-        if not src_path :
+        if not src_path:
             self.append_output(output_view, "[ERROR] Path is empty.\n")
             return
 
@@ -213,36 +232,53 @@ class RcloneGUI(Gtk.Application):
             source = f"{src_selected_remote}:{src_path}"
         else:
             source = src_path
+
         if dest_selected_remote != "None (Local Path)":
             dest = f"{dest_selected_remote}:{dest_path}"
         else:
             dest = dest_path
 
-
         btn.set_sensitive(False)
+        progress_bar.set_fraction(0.0)
+        progress_bar.set_text("Starting...")
 
         def worker():
-            if len(dest) == 0 :
-                process = subprocess.Popen(
-                    ["rclone", "copy", source, "./downloads", "--progress"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True
-                )
-            else :
-                process = subprocess.Popen(
-                    ["rclone", "copy", source, dest, "--progress"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True
-                )
+            cmd = ["rclone", "copy", source, dest if dest else "./downloads", "--progress", "--transfers", "1", "--checkers", "1"]
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+            # for line in process.stdout:
+            #     match = re.search(r"(\d+)%", line)
+            #     if match:
+            #         percent = int(match.group(1)) / 100
+            #         GLib.idle_add(progress_bar.set_fraction, percent)
+            #         GLib.idle_add(progress_bar.set_text, f"{match.group(1)}%")
+            #     else:
+            #         GLib.idle_add(progress_bar.set_text, line.strip())
+            current_percent_text = ""
 
             for line in process.stdout:
-                GLib.idle_add(self.append_output, output_view, line)
+                match = re.search(r"(\d+)%", line)
+                if match:
+                    percent = int(match.group(1)) / 100
+                    current_percent_text = f"{match.group(1)}%"
+                    GLib.idle_add(progress_bar.set_fraction, percent)
+                    GLib.idle_add(progress_bar.set_text, current_percent_text)
+                else:
+                    status_text = line.strip()
+                    if current_percent_text:
+                        GLib.idle_add(progress_bar.set_text, f"{status_text} – {current_percent_text}")
+                    else:
+                        GLib.idle_add(progress_bar.set_text, status_text)
+
+
             process.wait()
+            GLib.idle_add(progress_bar.set_fraction, 1.0)
+            GLib.idle_add(progress_bar.set_text, "Completed")
             GLib.idle_add(lambda: btn.set_sensitive(True))
 
         threading.Thread(target=worker, daemon=True).start()
+
+
 
     def append_output(self, output_view, text):
         buf = output_view.get_buffer()
