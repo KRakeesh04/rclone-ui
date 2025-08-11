@@ -302,6 +302,17 @@ class RcloneGUI(Gtk.Application):
         remotes = self.get_rclone_remotes()
         for remote in remotes :
             remote_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+            lsd = self.build_remote_tree(remote+":/")
+
+            output_view = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+            output_scroll = Gtk.ScrolledWindow()
+            output_scroll.set_child(output_view)
+            output_scroll.set_vexpand(True)
+            remote_box.append(output_scroll)
+
+            print(remote+"/")
+            self.append_output(output_view, remote+"/\n")
+            self.display_lsd(lsd, 0, output_view)
             remote_box.append(Gtk.Label(label=remote + " lsd should appear here"))
             stack.add_titled(remote_box, remote, remote.capitalize())
 
@@ -356,7 +367,16 @@ class RcloneGUI(Gtk.Application):
             print("Error fetching hierarchy:", e.output.decode())
             return {}
     
-    
+    def display_lsd(self, lsd, level, output_view):
+        for i in lsd:
+            if lsd[i] == None:
+                self.append_output(output_view, " "*level*5 + "├── " + i + "\n")
+                # print(" "*level*3 + "├── " + i)
+                continue
+            else :
+                self.append_output(output_view, " "*level*5 + "├── " + i + " /\n")
+                # print(" "*level*4 + "├── " + i + " /")
+            self.display_lsd(lsd[i], level+1, output_view)
 
 
 
