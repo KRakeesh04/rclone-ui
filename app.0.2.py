@@ -314,6 +314,52 @@ class RcloneGUI(Gtk.Application):
     
         return box
     
+    def tree(self):
+        """Creates a nested defaultdict that auto-creates dicts."""
+        return defaultdict(self.tree)
+
+    def insert_path(self, root, path_parts):
+        """Insert a file/folder path into the nested dictionary."""
+        if len(path_parts) == 1:
+            # Mark as file only if it doesn't exist
+            if not isinstance(root.get(path_parts[0], None), dict):
+                root[path_parts[0]] = None
+        else:
+            # Ensure this is a dict (folder), not a file
+            if root.get(path_parts[0]) is None:
+                root[path_parts[0]] = self.tree()
+            self.insert_path(root[path_parts[0]], path_parts[1:])
+
+    def build_remote_tree(self, remote_path):
+        """
+        Builds a nested dictionary representing the remote file hierarchy.
+
+        :param remote_path: Remote path like 'remote:/folder'
+        :return: Nested dict structure
+        """
+        try:
+            output = subprocess.check_output(
+                ["rclone", "lsf", "-R", remote_path],
+                stderr=subprocess.STDOUT
+            ).decode().splitlines()
+
+            hierarchy = self.tree()
+            for line in output:
+                if not line.strip():
+                    continue
+                parts = line.strip("/").split("/")
+                self.insert_path(hierarchy, parts)
+
+            return hierarchy
+
+        except subprocess.CalledProcessError as e:
+            print("Error fetching hierarchy:", e.output.decode())
+            return {}
+    
+    
+
+
+
     ###### Add Remotes page ######
     def create_remotes_page(self):
         box = Gtk.Box(
