@@ -14,6 +14,7 @@ class RcloneGUI(Gtk.Application):
     def __init__(self):
         super().__init__(application_id="com.example.RcloneGUI")
 
+
     ################################# Main Page #################################
     def do_activate(self, *args):
         win = Gtk.ApplicationWindow(application=self)
@@ -81,6 +82,8 @@ class RcloneGUI(Gtk.Application):
         win.set_child(main_box)
         win.present()
     ##############################################################################
+
+
     ############################## download page #################################
     def create_download_page(self):
         box = Gtk.Box(
@@ -280,6 +283,7 @@ class RcloneGUI(Gtk.Application):
     def append_output(self, output_view, text):
         buf = output_view.get_buffer()
         buf.insert(buf.get_end_iter(), text)
+
 
     ############################## Remote lsd page ##############################
     def create_remote_lsd_page(self):
