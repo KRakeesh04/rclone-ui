@@ -1,0 +1,9 @@
+#!/bin/bash
+APP_DIR="$(dirname "$(readlink -f "$0")")"
+export PYTHONPATH="$APP_DIR/src"
+
+# Activate the virtual environment
+source "$APP_DIR/.venv/bin/activate"
+
+# Run the application
+exec python3 "$APP_DIR/src/app.py" "$@"

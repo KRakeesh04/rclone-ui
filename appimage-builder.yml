@@ -1,0 +1,12 @@
+version: 1
+app:
+  name: RcloneDesktop
+  version: 0.1.0
+  icon: ./src/img/rclone_logo_icon.png#rclone.png
+  desktop-file: rclone.desktop
+  runtime: python3
+  requirements:
+    - python3-gi
+    - python3-gi-cairo
+    - gir1.2-gtk-4.0
+    - libcairo2-dev

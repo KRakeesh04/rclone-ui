@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Rclone Desktop
+Exec=AppRun
+Icon=./src/img/rclone_logo_icon.png
+Type=Application
+Categories=Utility;
